@@ -14,6 +14,7 @@ libraryDependencies ++= Seq(
   "joda-time" % "joda-time" % "2.10.8",
   "com.typesafe.play" %% "play-json-joda" % "2.9.2",
   "org.reactivemongo" %% "play2-reactivemongo" % "1.0.10-play28",
+  "org.reactivemongo" %% "reactivemongo-play-json-compat" % "1.0.10-play28"
 )
 
 scalafmtOnCompile := true
