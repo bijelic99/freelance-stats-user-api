@@ -37,6 +37,10 @@ class MongoUserRepository @Inject() (
       .one[User]
   } yield maybeUser
 
+  override def getByUsername(username: String): Future[Option[User]] =
+    usersCollection
+      .flatMap(_.find(Json.obj("username" -> username)).one[User])
+
   override def add(user: User): Future[User] =
     usersCollection
       .flatMap(_.insert.one(user))

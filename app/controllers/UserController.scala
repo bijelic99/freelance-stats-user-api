@@ -1,6 +1,7 @@
 package controllers
 
-import dtos.{Credentials, NewUser, PasswordUpdatePayload, UserWithoutPassword}
+import dtos.{Credentials, NewUser, PasswordUpdatePayload}
+import com.freelanceStats.commons.models.{User => UserWithoutPassword}
 import org.slf4j.{Logger, LoggerFactory}
 import play.api.libs.json.Json
 import play.api.mvc._

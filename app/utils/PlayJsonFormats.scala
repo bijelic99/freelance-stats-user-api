@@ -1,8 +1,9 @@
 package utils
 
-import dtos.{Credentials, NewUser, PasswordUpdatePayload, UserWithoutPassword}
+import dtos.{Credentials, NewUser, PasswordUpdatePayload}
+import com.freelanceStats.commons.models.{User => UserWithoutPassword}
 import models.User
-import play.api.libs.json.{Json, OFormat}
+import play.api.libs.json.{Format, Json, OFormat}
 
 object PlayJsonFormats {
   import play.api.libs.json.JodaReads._
@@ -12,8 +13,8 @@ object PlayJsonFormats {
   implicit val credentialsFormat: OFormat[Credentials] =
     Json.format[Credentials]
   implicit val newUserFormat: OFormat[NewUser] = Json.format[NewUser]
-  implicit val userWithoutPasswordFormat: OFormat[UserWithoutPassword] =
-    Json.format[UserWithoutPassword]
+  implicit val userWithoutPasswordFormat: Format[UserWithoutPassword] =
+    com.freelanceStats.commons.implicits.playJson.ModelsFormat.userFormat
   implicit val passwordUpdatePayloadFormat: OFormat[PasswordUpdatePayload] =
     Json.format[PasswordUpdatePayload]
 }

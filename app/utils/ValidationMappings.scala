@@ -1,6 +1,7 @@
 package utils
 
-import dtos.{NewUser, PasswordUpdatePayload, UserWithoutPassword}
+import dtos.{NewUser, PasswordUpdatePayload}
+import com.freelanceStats.commons.models.{User => UserWithoutPassword}
 import org.joda.time.{DateTime, DateTimeZone}
 import play.api.data.Forms._
 import play.api.data.Mapping

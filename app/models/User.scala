@@ -1,6 +1,7 @@
 package models
 
-import dtos.{NewUser, UserWithoutPassword}
+import dtos.NewUser
+import com.freelanceStats.commons.models.{User => UserWithoutPassword}
 import org.joda.time.DateTime
 
 case class User(

@@ -1,3 +1,4 @@
+
 name := """freelance-stats-user-api"""
 organization := "com.freelance-stats"
 
@@ -14,7 +15,10 @@ libraryDependencies ++= Seq(
   "joda-time" % "joda-time" % "2.10.8",
   "com.typesafe.play" %% "play-json-joda" % "2.9.2",
   "org.reactivemongo" %% "play2-reactivemongo" % "1.0.10-play28",
-  "org.reactivemongo" %% "reactivemongo-play-json-compat" % "1.0.10-play28"
+  "org.reactivemongo" %% "reactivemongo-play-json-compat" % "1.0.10-play28",
+  "at.favre.lib" % "bcrypt" % "0.9.0",
+  "com.github.jwt-scala" %% "jwt-play-json" % "9.0.5",
+  "com.freelance-stats" %% "commons" % "0.0.21",
 )
 
 scalafmtOnCompile := true
@@ -24,3 +28,10 @@ scalafmtOnCompile := true
 
 // Adds additional packages into conf/routes
 // play.sbt.routes.RoutesKeys.routesImport += "com.freelance-stats.binders._"
+
+githubTokenSource := TokenSource.GitConfig("github.token")
+
+resolvers ++= Seq(
+  Resolver.githubPackages("bijelic99"),
+  Resolver.githubPackages("jwt-scala")
+)

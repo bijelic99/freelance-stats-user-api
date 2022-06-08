@@ -13,6 +13,8 @@ trait UserRepository {
 
   def get(credentials: Credentials): Future[Option[User]]
 
+  def getByUsername(username: String): Future[Option[User]]
+
   def add(user: User): Future[User]
 
   def update(
