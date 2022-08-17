@@ -5,7 +5,7 @@ import com.freelanceStats.commons.models.{User => UserWithoutPassword}
 import org.slf4j.{Logger, LoggerFactory}
 import play.api.libs.json.Json
 import play.api.mvc._
-import services.userService.UserService
+import services.{UserIndexService, UserService}
 import utils.ValidationMappings
 
 import javax.inject._
@@ -14,7 +14,8 @@ import scala.util.chaining._
 
 class UserController @Inject() (
     val controllerComponents: ControllerComponents,
-    userService: UserService
+    userService: UserService,
+    userIndexService: UserIndexService
 )(implicit
     executionContext: ExecutionContext
 ) extends BaseController {
@@ -148,6 +149,30 @@ class UserController @Inject() (
   def login(): Action[Credentials] = Action(parse.json[Credentials]).async {
     implicit request: Request[Credentials] =>
       ???
+  }
+
+  def search(
+      term: Option[String],
+      size: Int = 10,
+      from: Int = 0
+  ): Action[AnyContent] = Action.async {
+    implicit request: Request[AnyContent] =>
+      userIndexService
+        .searchUsers(term, size, from)
+        .map(Json.toJson(_))
+        .map(Ok(_))
+        .recover { t =>
+          val message = "Unexpected error while searching for users"
+          log.error(message, t)
+          InternalServerError(message)
+        }
+  }
+
+  def reindex(): Action[AnyContent] = Action.async {
+    implicit request: Request[AnyContent] =>
+      userIndexService.reindexUsers
+        .map(_ => Ok)
+        .recover(t => InternalServerError(t.getMessage))
   }
 
 }

@@ -1,4 +1,4 @@
-package services.userService
+package services
 
 import at.favre.lib.crypto.bcrypt.BCrypt
 

@@ -16,9 +16,11 @@ libraryDependencies ++= Seq(
   "com.typesafe.play" %% "play-json-joda" % "2.9.2",
   "org.reactivemongo" %% "play2-reactivemongo" % "1.0.10-play28",
   "org.reactivemongo" %% "reactivemongo-play-json-compat" % "1.0.10-play28",
+  "org.reactivemongo" %% "reactivemongo-akkastream" % "1.0.10",
   "at.favre.lib" % "bcrypt" % "0.9.0",
   "com.github.jwt-scala" %% "jwt-play-json" % "9.0.5",
   "com.freelance-stats" %% "commons" % "0.0.21",
+  "com.sksamuel.elastic4s" %% "elastic4s-client-esjava" % "7.17.1",
 )
 
 scalafmtOnCompile := true

@@ -1,7 +1,7 @@
-package services.userService
+package services
 
-import dtos.{Credentials, NewUser, PasswordUpdatePayload}
 import com.freelanceStats.commons.models.{User => UserWithoutPassword}
+import dtos.{Credentials, NewUser, PasswordUpdatePayload}
 import exceptions.ApplicationException
 import models.Aliases.JwtToken
 import models.User
@@ -16,10 +16,11 @@ import scala.concurrent.{ExecutionContext, Future}
 class UserService @Inject() (
     userRepository: UserRepository,
     passwordService: PasswordService,
-    jwtService: JwtService
+    jwtService: JwtService,
+    userIndexService: UserIndexService
 )(implicit ec: ExecutionContext) {
-  import utils.PlayJsonFormats._
   import User._
+  import utils.PlayJsonFormats._
 
   private val log: Logger = LoggerFactory.getLogger(classOf[UserService])
 
@@ -51,22 +52,20 @@ class UserService @Inject() (
 
   def register(user: NewUser): Future[UserWithoutPassword] = {
     log.debug(s"Registering user with username of: '${user.username}'")
-    userRepository
-      .getByUsername(user.username)
-      .flatMap {
-        case Some(_) =>
-          Future.failed(ApplicationException.UserAlreadyExists)
-        case None =>
-          userRepository
-            .add(
-              User.apply(
-                UUID.randomUUID().toString,
-                user
-                  .copy(password = passwordService.hashPassword(user.password))
-              )
-            )
-            .map(_.toUserWithoutPassword)
-      }
+    for {
+      existingUser <- userRepository.getByUsername(user.username)
+      _ = if (existingUser.isDefined)
+        throw ApplicationException.UserAlreadyExists
+      else ()
+      dbUser <- userRepository.add(
+        User.apply(
+          UUID.randomUUID().toString,
+          user
+            .copy(password = passwordService.hashPassword(user.password))
+        )
+      )
+      indexedUser <- userIndexService.indexUser(dbUser.toUserWithoutPassword)
+    } yield indexedUser
   }
 
   def update(user: UserWithoutPassword): Future[UserWithoutPassword] = {
@@ -74,9 +73,16 @@ class UserService @Inject() (
     if (user.deleted) {
       Future.failed(ApplicationException.CantDeleteViaUpdate)
     } else {
-      userRepository
-        .update(user.id, Json.toJson(user).as[JsObject], fetchNewObject = true)
-        .map(_.get.toUserWithoutPassword)
+      for {
+        dbUser <- userRepository
+          .update(
+            user.id,
+            Json.toJson(user).as[JsObject],
+            fetchNewObject = true
+          )
+        userWithoutPassword = dbUser.get.toUserWithoutPassword
+        indexedUser <- userIndexService.indexUser(userWithoutPassword)
+      } yield indexedUser
     }
   }
 
@@ -116,8 +122,18 @@ class UserService @Inject() (
 
   def delete(userId: String): Future[Unit] = {
     log.debug(s"Deleting user with id of: '$userId'")
-    userRepository
-      .update(userId, Json.obj("deleted" -> true), fetchNewObject = false)
-      .map(_ => ())
+    for {
+      userOpt <- userRepository.get(userId)
+      if userOpt.isDefined
+      user = userOpt.get
+      _ <- userRepository.update(
+        userId,
+        Json.obj("deleted" -> true),
+        fetchNewObject = false
+      )
+      _ <- userIndexService.indexUser(
+        user.copy(deleted = true).toUserWithoutPassword
+      )
+    } yield ()
   }
 }

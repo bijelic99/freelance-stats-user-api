@@ -2,7 +2,7 @@ package utils
 
 import dtos.{Credentials, NewUser, PasswordUpdatePayload}
 import com.freelanceStats.commons.models.{User => UserWithoutPassword}
-import models.User
+import models.{SearchResponse, User}
 import play.api.libs.json.{Format, Json, OFormat}
 
 object PlayJsonFormats {
@@ -17,4 +17,8 @@ object PlayJsonFormats {
     com.freelanceStats.commons.implicits.playJson.ModelsFormat.userFormat
   implicit val passwordUpdatePayloadFormat: OFormat[PasswordUpdatePayload] =
     Json.format[PasswordUpdatePayload]
+
+  implicit val userSearchResponseFormat
+      : Format[SearchResponse[UserWithoutPassword]] =
+    Json.format[SearchResponse[UserWithoutPassword]]
 }

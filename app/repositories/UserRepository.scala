@@ -1,5 +1,7 @@
 package repositories
 
+import akka.Done
+import akka.stream.scaladsl.Source
 import com.google.inject.ImplementedBy
 import dtos.Credentials
 import models.User
@@ -22,4 +24,7 @@ trait UserRepository {
       fields: JsObject,
       fetchNewObject: Boolean
   ): Future[Option[User]]
+
+  def getAll: Source[User, Future[Done]]
+
 }

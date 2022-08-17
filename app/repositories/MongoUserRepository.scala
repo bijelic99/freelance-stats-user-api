@@ -1,5 +1,8 @@
 package repositories
 
+import akka.Done
+import akka.stream.Materializer
+import akka.stream.scaladsl.Source
 import dtos.Credentials
 import models.User
 import play.api.libs.json.{JsObject, Json}
@@ -7,6 +10,7 @@ import play.modules.reactivemongo.ReactiveMongoApi
 import reactivemongo.api.bson.collection.BSONCollection
 import reactivemongo.play.json.compat.bson2json._
 import reactivemongo.play.json.compat.json2bson._
+import reactivemongo.akkastream.cursorProducer
 
 import javax.inject.Inject
 import scala.concurrent.{ExecutionContext, Future}
@@ -14,7 +18,8 @@ import scala.concurrent.{ExecutionContext, Future}
 class MongoUserRepository @Inject() (
     reactiveMongoApi: ReactiveMongoApi
 )(implicit
-    executionContext: ExecutionContext
+    executionContext: ExecutionContext,
+    materializer: Materializer
 ) extends UserRepository {
   import utils.PlayJsonFormats._
 
@@ -69,4 +74,12 @@ class MongoUserRepository @Inject() (
       )
       .map(_.value.map(_.asOpt[User].get))
 
+  override def getAll: Source[User, Future[Done]] =
+    Source
+      .futureSource(
+        usersCollection.map(
+          _.find(Json.obj()).cursor[User]().documentSource()
+        )
+      )
+      .mapMaterializedValue(_.flatten.map(_ => Done))
 }

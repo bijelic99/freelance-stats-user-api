@@ -1,7 +1,7 @@
-package services.userService
+package services
 
-import configurations.JwtServiceConfiguration
 import com.freelanceStats.commons.models.{User => UserWithoutPassword}
+import configurations.JwtServiceConfiguration
 import models.Aliases
 import pdi.jwt.{JwtAlgorithm, JwtClaim, JwtJson}
 import play.api.libs.json.Json

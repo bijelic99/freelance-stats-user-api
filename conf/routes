@@ -11,7 +11,9 @@ GET     /assets/*file               controllers.Assets.versioned(path="/public",
 
 POST     /api/v1/register                   controllers.UserController.register()
 POST     /api/v1/login                      controllers.UserController.login()
+GET      /api/v1/user/reindex               controllers.UserController.reindex()
 GET      /api/v1/user/:id                   controllers.UserController.get(id: String)
+GET      /api/v1/user                       controllers.UserController.search(term: Option[String], size: Int = 10, from: Int = 0)
 PUT      /api/v1/user/:id                   controllers.UserController.put(id: String)
 PUT      /api/v1/user/:id/updatePassword    controllers.UserController.put(id: String)
 DELETE   /api/v1/user/:id                   controllers.UserController.delete(id: String)
