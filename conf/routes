@@ -11,6 +11,7 @@ GET     /assets/*file               controllers.Assets.versioned(path="/public",
 
 POST     /api/v1/register                   controllers.UserController.register()
 POST     /api/v1/login                      controllers.UserController.login()
+HEAD     /api/v1/user/:username             controllers.UserController.checkUsername(username: String)
 GET      /api/v1/user/reindex               controllers.UserController.reindex()
 GET      /api/v1/user/:id                   controllers.UserController.get(id: String)
 GET      /api/v1/user                       controllers.UserController.search(term: Option[String], size: Int = 10, from: Int = 0)

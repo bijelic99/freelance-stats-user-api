@@ -136,4 +136,9 @@ class UserService @Inject() (
       )
     } yield ()
   }
+
+  def checkIfUsernameExists(username: String): Future[Boolean] =
+    userRepository
+      .getByUsername(username)
+      .map(_.isDefined)
 }

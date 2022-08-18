@@ -175,4 +175,15 @@ class UserController @Inject() (
         .recover(t => InternalServerError(t.getMessage))
   }
 
+  def checkUsername(username: String): Action[AnyContent] = Action.async { implicit request: Request[AnyContent] =>
+    userService
+      .checkIfUsernameExists(username)
+      .map{
+        case true =>
+          Ok
+        case false =>
+          NotFound
+      }
+  }
+
 }
