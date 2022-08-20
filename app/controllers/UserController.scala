@@ -62,7 +62,7 @@ class UserController @Inject() (
       } else {
         Future.successful(
           BadRequest(
-            errors.map(_.message).mkString(",\n")
+            Json.obj("errors" -> errors.map(_.message))
           )
         )
       }
@@ -175,15 +175,16 @@ class UserController @Inject() (
         .recover(t => InternalServerError(t.getMessage))
   }
 
-  def checkUsername(username: String): Action[AnyContent] = Action.async { implicit request: Request[AnyContent] =>
-    userService
-      .checkIfUsernameExists(username)
-      .map{
-        case true =>
-          Ok
-        case false =>
-          NotFound
-      }
+  def checkUsername(username: String): Action[AnyContent] = Action.async {
+    implicit request: Request[AnyContent] =>
+      userService
+        .checkIfUsernameExists(username)
+        .map {
+          case true =>
+            Ok
+          case false =>
+            NotFound
+        }
   }
 
 }
