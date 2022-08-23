@@ -2,8 +2,11 @@ package controllers
 
 import dtos.{Credentials, NewUser, PasswordUpdatePayload}
 import com.freelanceStats.commons.models.{User => UserWithoutPassword}
+import com.freelanceStats.jwtAuth.actions.JwtAuthActionBuilder
+import com.freelanceStats.jwtAuth.models.AuthenticatedRequest
+import exceptions.ApplicationException.WrongUsernameOrPassword
 import org.slf4j.{Logger, LoggerFactory}
-import play.api.libs.json.Json
+import play.api.libs.json.{JsObject, Json}
 import play.api.mvc._
 import services.{UserIndexService, UserService}
 import utils.ValidationMappings
@@ -15,17 +18,19 @@ import scala.util.chaining._
 class UserController @Inject() (
     val controllerComponents: ControllerComponents,
     userService: UserService,
-    userIndexService: UserIndexService
+    userIndexService: UserIndexService,
+    authActionBuilder: JwtAuthActionBuilder
 )(implicit
     executionContext: ExecutionContext
 ) extends BaseController {
 
   import utils.PlayJsonFormats._
+  import com.freelanceStats.jwtAuth.formats.PlayJson._
 
   val log: Logger = LoggerFactory.getLogger(classOf[UserController])
 
-  def get(id: String): Action[AnyContent] = Action.async {
-    implicit request: Request[AnyContent] =>
+  def get(id: String): Action[AnyContent] = authActionBuilder.async {
+    implicit request: AuthenticatedRequest[AnyContent] =>
       userService
         .get(id)
         .map {
@@ -68,9 +73,9 @@ class UserController @Inject() (
       }
   }
 
-  def put(id: String): Action[UserWithoutPassword] = Action(
+  def put(id: String): Action[UserWithoutPassword] = authActionBuilder(
     parse.json[UserWithoutPassword]
-  ).async { implicit request: Request[UserWithoutPassword] =>
+  ).async { implicit request: AuthenticatedRequest[UserWithoutPassword] =>
     request.body
       .pipe {
         case user if user.id.equals(id) =>
@@ -104,36 +109,38 @@ class UserController @Inject() (
       }
   }
 
-  def updatePassword(id: String): Action[PasswordUpdatePayload] = Action(
-    parse.json[PasswordUpdatePayload]
-  ).async { implicit request: Request[PasswordUpdatePayload] =>
-    val payload = request.body
+  def updatePassword(id: String): Action[PasswordUpdatePayload] =
+    authActionBuilder(
+      parse.json[PasswordUpdatePayload]
+    ).async { implicit request: AuthenticatedRequest[PasswordUpdatePayload] =>
+      val payload = request.body
 
-    val (_, errors) = ValidationMappings.passwordUpdatePayloadValidationMapping
-      .unbindAndValidate(payload)
+      val (_, errors) =
+        ValidationMappings.passwordUpdatePayloadValidationMapping
+          .unbindAndValidate(payload)
 
-    if (errors.isEmpty) {
-      userService
-        .updatePassword(id, payload)
-        .map(_ => Ok)
-        .recover { case t =>
-          log.error(
-            s"Unexpected error while trying to update password for user with id: '$id'",
-            t
+      if (errors.isEmpty) {
+        userService
+          .updatePassword(id, payload)
+          .map(_ => Ok)
+          .recover { case t =>
+            log.error(
+              s"Unexpected error while trying to update password for user with id: '$id'",
+              t
+            )
+            InternalServerError
+          }
+      } else {
+        Future.successful(
+          BadRequest(
+            errors.map(_.message).mkString(",\n")
           )
-          InternalServerError
-        }
-    } else {
-      Future.successful(
-        BadRequest(
-          errors.map(_.message).mkString(",\n")
         )
-      )
+      }
     }
-  }
 
-  def delete(id: String): Action[AnyContent] = Action.async {
-    implicit request: Request[AnyContent] =>
+  def delete(id: String): Action[AnyContent] = authActionBuilder.async {
+    implicit request: AuthenticatedRequest[AnyContent] =>
       userService
         .delete(id)
         .map(_ => Ok)
@@ -148,15 +155,25 @@ class UserController @Inject() (
 
   def login(): Action[Credentials] = Action(parse.json[Credentials]).async {
     implicit request: Request[Credentials] =>
-      ???
+      userService
+        .login(request.body)
+        .map { case (user, token) =>
+          Ok(Json.obj("user" -> user) ++ Json.toJson(token).as[JsObject])
+        }
+        .recover {
+          case WrongUsernameOrPassword =>
+            Forbidden
+          case _ =>
+            BadRequest
+        }
   }
 
   def search(
       term: Option[String],
       size: Int = 10,
       from: Int = 0
-  ): Action[AnyContent] = Action.async {
-    implicit request: Request[AnyContent] =>
+  ): Action[AnyContent] = authActionBuilder.async {
+    implicit request: AuthenticatedRequest[AnyContent] =>
       userIndexService
         .searchUsers(term, size, from)
         .map(Json.toJson(_))
@@ -168,8 +185,8 @@ class UserController @Inject() (
         }
   }
 
-  def reindex(): Action[AnyContent] = Action.async {
-    implicit request: Request[AnyContent] =>
+  def reindex(): Action[AnyContent] = authActionBuilder.async {
+    implicit request: AuthenticatedRequest[AnyContent] =>
       userIndexService.reindexUsers
         .map(_ => Ok)
         .recover(t => InternalServerError(t.getMessage))

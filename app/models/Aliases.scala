@@ -1,5 +1,3 @@
 package models
 
-object Aliases {
-  type JwtToken = String
-}
+object Aliases {}

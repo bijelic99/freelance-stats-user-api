@@ -1,9 +1,10 @@
 package services
 
 import com.freelanceStats.commons.models.{User => UserWithoutPassword}
+import com.freelanceStats.jwtAuth.models.JwtToken
+import com.freelanceStats.jwtAuth.services.JwtService
 import dtos.{Credentials, NewUser, PasswordUpdatePayload}
 import exceptions.ApplicationException
-import models.Aliases.JwtToken
 import models.User
 import org.slf4j.{Logger, LoggerFactory}
 import play.api.libs.json.{JsObject, Json}
