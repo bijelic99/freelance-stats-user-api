@@ -78,7 +78,7 @@ class UserController @Inject() (
   ).async { implicit request: AuthenticatedRequest[UserWithoutPassword] =>
     request.body
       .pipe {
-        case user if user.id.equals(id) =>
+        case user if user.id.equals(id) && request.user.id.equals(id) =>
           val (_, errors) =
             ValidationMappings.userWithoutPasswordValidationMapping
               .unbindAndValidate(user)
@@ -104,7 +104,9 @@ class UserController @Inject() (
           }
         case _ =>
           Future.successful(
-            BadRequest("Updating id is not allowed")
+            BadRequest(
+              "Updating id is not allowed and only authenticated user can update his account"
+            )
           )
       }
   }
@@ -113,44 +115,54 @@ class UserController @Inject() (
     authActionBuilder(
       parse.json[PasswordUpdatePayload]
     ).async { implicit request: AuthenticatedRequest[PasswordUpdatePayload] =>
-      val payload = request.body
+      if (id.equals(request.user.id)) {
+        val payload = request.body
 
-      val (_, errors) =
-        ValidationMappings.passwordUpdatePayloadValidationMapping
-          .unbindAndValidate(payload)
+        val (_, errors) =
+          ValidationMappings.passwordUpdatePayloadValidationMapping
+            .unbindAndValidate(payload)
 
-      if (errors.isEmpty) {
-        userService
-          .updatePassword(id, payload)
-          .map(_ => Ok)
-          .recover { case t =>
-            log.error(
-              s"Unexpected error while trying to update password for user with id: '$id'",
-              t
+        if (errors.isEmpty) {
+          userService
+            .updatePassword(id, payload)
+            .map(_ => Ok)
+            .recover { case t =>
+              log.error(
+                s"Unexpected error while trying to update password for user with id: '$id'",
+                t
+              )
+              InternalServerError
+            }
+        } else {
+          Future.successful(
+            BadRequest(
+              errors.map(_.message).mkString(",\n")
             )
-            InternalServerError
-          }
+          )
+        }
       } else {
         Future.successful(
-          BadRequest(
-            errors.map(_.message).mkString(",\n")
-          )
+          BadRequest("User can only update his password")
         )
       }
     }
 
   def delete(id: String): Action[AnyContent] = authActionBuilder.async {
     implicit request: AuthenticatedRequest[AnyContent] =>
-      userService
-        .delete(id)
-        .map(_ => Ok)
-        .recover { case t =>
-          log.error(
-            s"Unexpected error while trying to delete user with id of: '$id'",
-            t
-          )
-          InternalServerError
-        }
+      if (id.equals(request.user.id)) {
+        userService
+          .delete(id)
+          .map(_ => Ok)
+          .recover { case t =>
+            log.error(
+              s"Unexpected error while trying to delete user with id of: '$id'",
+              t
+            )
+            InternalServerError
+          }
+      } else {
+        Future.successful(BadRequest("User can only delete himself"))
+      }
   }
 
   def login(): Action[Credentials] = Action(parse.json[Credentials]).async {
