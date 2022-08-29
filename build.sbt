@@ -20,7 +20,7 @@ libraryDependencies ++= Seq(
   "at.favre.lib" % "bcrypt" % "0.9.0",
   "com.github.jwt-scala" %% "jwt-play-json" % "9.0.5",
   "com.freelance-stats" %% "commons" % "commons-0.0.29",
-  "com.freelance-stats" %% "jwt-auth" % "jwt-auth-0.0.12",
+  "com.freelance-stats" %% "jwt-auth" % "jwt-auth-0.0.13",
   "com.sksamuel.elastic4s" %% "elastic4s-client-esjava" % "7.17.1",
 )
 
